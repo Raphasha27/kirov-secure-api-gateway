@@ -1,0 +1,62 @@
+version: "3.9"
+
+services:
+  api-gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: kirov-gateway
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      KG_DATABASE_URL: "postgresql://kirov:kirov@postgres:5432/kirov_gateway"
+      KG_REDIS_URL: "redis://redis:6379/0"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    restart: unless-stopped
+    networks:
+      - kirov-net
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: kirov-postgres
+    environment:
+      POSTGRES_USER: kirov
+      POSTGRES_PASSWORD: kirov
+      POSTGRES_DB: kirov_gateway
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kirov -d kirov_gateway"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - kirov-net
+
+  redis:
+    image: redis:7-alpine
+    container_name: kirov-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    restart: unless-stopped
+    networks:
+      - kirov-net
+
+volumes:
+  pgdata:
+  redisdata:
+
+networks:
+  kirov-net:
+    driver: bridge
