@@ -19,8 +19,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger("kirov")
 
-DATABASE_URL = "postgresql://kirov:kirov@localhost:5432/kirov_gateway"
-engine = create_engine(DATABASE_URL, pool_pre_ping=True)
+engine = create_engine(settings.database_url, pool_pre_ping=True)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 app = FastAPI(
@@ -83,7 +82,11 @@ async def anomaly_detection_middleware(request: Request, call_next):
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "service": settings.app_name, "version": settings.app_version}
+    return {
+        "status": "ok",
+        "service": settings.app_name,
+        "version": settings.app_version,
+    }
 
 
 @app.get("/api/v1/status")
